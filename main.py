@@ -20,14 +20,6 @@ def test_proxy(proxy):
     return False
 
 proxy_list = get_proxy_list()
-print(f"Testing first 10 proxies out of {len(proxy_list)}...")
-
-for proxy in proxy_list[:50]:
-    working = test_proxy(proxy)
-    if working:
-        print(f"{proxy} - WORKING")
-    else:
-        print(f"{proxy} - failed")
 
 def get_working_proxies(proxy_list, limit=50, needed=3):
     working = []
@@ -38,17 +30,34 @@ def get_working_proxies(proxy_list, limit=50, needed=3):
                 break
     return working
 
+print(f"Testing first 10 proxies out of {len(proxy_list)}...")
+
+def make_request_with_rotation(url, working_proxies, max_attempts=3):
+    for attempt in range(max_attempts):
+        if not working_proxies:
+            print("No more working proxies to try.")
+            return None
+
+        proxy = working_proxies[attempt % len(working_proxies)]
+        proxies = {
+            "http": f"http://{proxy}",
+            "https": f"http://{proxy}"
+        }
+        try:
+            response = requests.get(url, proxies=proxies, timeout=5)
+            if response.status_code == 200:
+                print(f"Success using proxy: {proxy}")
+                return response
+        except Exception:
+            print(f"Proxy {proxy} failed, rotating to next one...")
+
+    print("All attempts failed.")
+    return None
+
 working_proxies = get_working_proxies(proxy_list)
 print(f"\nFound {len(working_proxies)} working proxies: {working_proxies}")
 
-if working_proxies:
-    chosen_proxy = working_proxies[0]
-    proxies = {
-        "http": f"http://{chosen_proxy}",
-        "https": f"http://{chosen_proxy}"
-    }
-    response = requests.get("https://api.ipify.org?format=json", proxies=proxies, timeout=5)
-    hidden_ip = response.json()["ip"]
+result = make_request_with_rotation("https://api.ipify.org?format=json", working_proxies)
+if result:
+    hidden_ip = result.json()["ip"]
     print(f"Your IP through the proxy is now: {hidden_ip}")
-else:
-    print("No working proxies found this time — try running again.")
