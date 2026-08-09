@@ -28,3 +28,27 @@ for proxy in proxy_list[:50]:
         print(f"{proxy} - WORKING")
     else:
         print(f"{proxy} - failed")
+
+def get_working_proxies(proxy_list, limit=50, needed=3):
+    working = []
+    for proxy in proxy_list[:limit]:
+        if test_proxy(proxy):
+            working.append(proxy)
+            if len(working) >= needed:
+                break
+    return working
+
+working_proxies = get_working_proxies(proxy_list)
+print(f"\nFound {len(working_proxies)} working proxies: {working_proxies}")
+
+if working_proxies:
+    chosen_proxy = working_proxies[0]
+    proxies = {
+        "http": f"http://{chosen_proxy}",
+        "https": f"http://{chosen_proxy}"
+    }
+    response = requests.get("https://api.ipify.org?format=json", proxies=proxies, timeout=5)
+    hidden_ip = response.json()["ip"]
+    print(f"Your IP through the proxy is now: {hidden_ip}")
+else:
+    print("No working proxies found this time — try running again.")
