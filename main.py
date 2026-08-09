@@ -19,8 +19,6 @@ def test_proxy(proxy):
         return False
     return False
 
-proxy_list = get_proxy_list()
-
 def get_working_proxies(proxy_list, limit=50, needed=3):
     working = []
     for proxy in proxy_list[:limit]:
@@ -29,8 +27,6 @@ def get_working_proxies(proxy_list, limit=50, needed=3):
             if len(working) >= needed:
                 break
     return working
-
-print(f"Testing first 10 proxies out of {len(proxy_list)}...")
 
 def make_request_with_rotation(url, working_proxies, max_attempts=3):
     for attempt in range(max_attempts):
@@ -54,10 +50,35 @@ def make_request_with_rotation(url, working_proxies, max_attempts=3):
     print("All attempts failed.")
     return None
 
-working_proxies = get_working_proxies(proxy_list)
-print(f"\nFound {len(working_proxies)} working proxies: {working_proxies}")
+working_proxies = []
 
-result = make_request_with_rotation("https://api.ipify.org?format=json", working_proxies)
-if result:
-    hidden_ip = result.json()["ip"]
-    print(f"Your IP through the proxy is now: {hidden_ip}")
+while True:
+    print("\n--- IP Hider Menu ---")
+    print("1. Check my real IP")
+    print("2. Fetch and test proxies")
+    print("3. Hide my IP")
+    print("4. Quit")
+
+    choice = input("Choose an option: ").strip()
+
+    if choice == "1":
+        response = requests.get("https://api.ipify.org?format=json")
+        real_ip = response.json()["ip"]
+        print(f"Your real IP is: {real_ip}")
+    elif choice == "2":
+        proxy_list = get_proxy_list()
+        working_proxies = get_working_proxies(proxy_list)
+        print(f"Found {len(working_proxies)} working proxies: {working_proxies}")
+    elif choice == "3":
+        if not working_proxies:
+            print("No working proxies yet — choose option 2 first.")
+        else:
+            result = make_request_with_rotation("https://api.ipify.org?format=json", working_proxies)
+            if result:
+                hidden_ip = result.json()["ip"]
+                print(f"Your IP through the proxy is now: {hidden_ip}")
+    elif choice == "4":
+        print("Goodbye!")
+        break
+    else:
+        print("Invalid choice, try again.")
